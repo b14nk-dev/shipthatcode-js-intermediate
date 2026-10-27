@@ -24,12 +24,17 @@ function declareLet(scope, name, value) {
 
 // Bind name in the nearest function scope. Return false if it already holds a let of that name.
 function declareVar(scope, name, value) {
-  while (scope.parent !== null) {
+  let old = ownBinding(scope, name);
+  while (!scope.isFunction && scope.parent !== null) {
     if (ownBinding(scope, name) !== null) {
-      if (ownBinding(scope, name).kind === "let") return false;
-      ownBinding(scope, name).value = value;
+      old = ownBinding(scope, name);
     }
     scope = scope.parent;
+  }
+  if (old !== null) {
+    if (old.kind === "let") return false;
+    old.value = value;
+    return true;
   }
   scope.bindings.push({ name, value, kind: "var" });
   return true;
