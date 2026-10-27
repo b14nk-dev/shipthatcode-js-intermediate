@@ -1,79 +1,36 @@
-// A scope is a plain object. bindings is an array of { name, value, kind }; kind is 'let' or 'var'.
-function makeScope(parent, isFunction) {
-  return {
-    parent: parent, // enclosing scope, or null at the top level
-    isFunction: isFunction, // true for the top level and for `call` scopes
-    bindings: [],
+let squareCalls = 0;
+let cubeCalls = 0;
+const square = (n) => {
+  squareCalls++;
+  return n * n;
+};
+const cube = (n) => {
+  cubeCalls++;
+  return n * n * n;
+};
+
+// Return a function that calls fn at most once per distinct argument.
+function memoize(fn) {
+  // TODO: keep a cache in a variable that only the returned function can see.
+  const cache = {};
+  return (n) => {
+    if (cache[n] !== undefined) return cache[n];
+    cache[n] = fn(n);
+    return cache[n];
   };
 }
 
-// The binding stored in THIS scope only (not its parents), or null.
-function ownBinding(scope, name) {
-  for (const b of scope.bindings) {
-    if (b.name === name) return b;
-  }
-  return null;
-}
+const fastSquare = memoize(square);
+const fastCube = memoize(cube);
 
-// Bind name in THIS scope. Return false if this scope already has the name.
-function declareLet(scope, name, value) {
-  if (ownBinding(scope, name) !== null) return false;
-  scope.bindings.push({ name, value, kind: "let" });
-  return true;
-}
-
-// Bind name in the nearest function scope. Return false if it already holds a let of that name.
-function declareVar(scope, name, value) {
-  let old = ownBinding(scope, name);
-  while (!scope.isFunction && scope.parent !== null) {
-    if (ownBinding(scope, name) !== null) {
-      old = ownBinding(scope, name);
-    }
-    scope = scope.parent;
-  }
-  if (old !== null) {
-    if (old.kind === "let") return false;
-    old.value = value;
-    return true;
-  }
-  scope.bindings.push({ name, value, kind: "var" });
-  return true;
-}
-
-// Return the binding from the innermost scope that has name, or null.
-function find(scope, name) {
-  while (scope !== null) {
-    if (ownBinding(scope, name) !== null) return ownBinding(scope, name);
-    scope = scope.parent;
-  }
-  return null;
-}
-
-const lines = require("fs")
+const nums = require("fs")
   .readFileSync(0, "utf-8")
-  .split("\n")
-  .filter((l) => l.trim() !== "");
-
-let scope = makeScope(null, true);
-for (const line of lines) {
-  const [cmd, name, value] = line.trim().split(" ");
-  if (cmd === "enter") {
-    scope = makeScope(scope, false);
-  } else if (cmd === "call") {
-    scope = makeScope(scope, true);
-  } else if (cmd === "exit") {
-    scope = scope.parent;
-  } else if (cmd === "let" || cmd === "var") {
-    const ok =
-      cmd === "let"
-        ? declareLet(scope, name, value)
-        : declareVar(scope, name, value);
-    if (!ok) console.log("SyntaxError: " + name + " has already been declared");
-  } else if (cmd === "set" || cmd === "print") {
-    const binding = find(scope, name);
-    if (binding === null)
-      console.log("ReferenceError: " + name + " is not defined");
-    else if (cmd === "set") binding.value = value;
-    else console.log(binding.value);
-  }
+  .trim()
+  .split(" ")
+  .filter((s) => s !== "")
+  .map(Number);
+for (const n of nums) {
+  console.log(n + " " + fastSquare(n) + " " + fastCube(n));
 }
+console.log("square calls: " + squareCalls);
+console.log("cube calls: " + cubeCalls);
