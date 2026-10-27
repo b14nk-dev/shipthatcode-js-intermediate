@@ -1,36 +1,39 @@
-let squareCalls = 0;
-let cubeCalls = 0;
-const square = (n) => {
-  squareCalls++;
-  return n * n;
-};
-const cube = (n) => {
-  cubeCalls++;
-  return n * n * n;
-};
+const lines = require('fs')
+  .readFileSync(0, 'utf-8')
+  .split('\n')
+  .filter((l) => l.trim() !== '');
 
-// Return a function that calls fn at most once per distinct argument.
-function memoize(fn) {
-  // TODO: keep a cache in a variable that only the returned function can see.
-  const cache = {};
-  return (n) => {
-    if (cache[n] !== undefined) return cache[n];
-    cache[n] = fn(n);
-    return cache[n];
+const stack = (function (capacity) {
+  // TODO: keep the items in a private array and return push, pop, peek, size.
+  const stack = [];
+  return {
+    push(x) {
+      if (stack.length >= capacity) return false;
+      stack.push(x);
+      return true;
+    },
+    pop() {
+      return stack.pop();
+    },
+    peek() {
+      return stack[stack.length - 1];
+    },
+    size() {
+      return stack.length;
+    },
   };
-}
+})(Number(lines[0]));
 
-const fastSquare = memoize(square);
-const fastCube = memoize(cube);
-
-const nums = require("fs")
-  .readFileSync(0, "utf-8")
-  .trim()
-  .split(" ")
-  .filter((s) => s !== "")
-  .map(Number);
-for (const n of nums) {
-  console.log(n + " " + fastSquare(n) + " " + fastCube(n));
+for (const line of lines.slice(1)) {
+  const [cmd, arg] = line.trim().split(' ');
+  if (cmd === 'push') {
+    console.log(stack.push(arg) ? 'ok' : 'full');
+  } else if (cmd === 'pop' || cmd === 'peek') {
+    const item = stack[cmd]();
+    console.log(item === undefined ? 'empty' : item);
+  } else if (cmd === 'size') {
+    console.log(stack.size());
+  } else if (cmd === 'api') {
+    console.log(Object.keys(stack).join(','));
+  }
 }
-console.log("square calls: " + squareCalls);
-console.log("cube calls: " + cubeCalls);
