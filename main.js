@@ -1,39 +1,22 @@
-const lines = require('fs')
-  .readFileSync(0, 'utf-8')
-  .split('\n')
-  .filter((l) => l.trim() !== '');
+const parts = require('fs').readFileSync(0, 'utf-8').trim().split(' ').map(Number);
+const failures = parts[0];
+const attempts = parts[1];
 
-const stack = (function (capacity) {
-  // TODO: keep the items in a private array and return push, pop, peek, size.
-  const stack = [];
-  return {
-    push(x) {
-      if (stack.length >= capacity) return false;
-      stack.push(x);
-      return true;
-    },
-    pop() {
-      return stack.pop();
-    },
-    peek() {
-      return stack[stack.length - 1];
-    },
-    size() {
-      return stack.length;
-    },
-  };
-})(Number(lines[0]));
-
-for (const line of lines.slice(1)) {
-  const [cmd, arg] = line.trim().split(' ');
-  if (cmd === 'push') {
-    console.log(stack.push(arg) ? 'ok' : 'full');
-  } else if (cmd === 'pop' || cmd === 'peek') {
-    const item = stack[cmd]();
-    console.log(item === undefined ? 'empty' : item);
-  } else if (cmd === 'size') {
-    console.log(stack.size());
-  } else if (cmd === 'api') {
-    console.log(Object.keys(stack).join(','));
-  }
+let calls = 0;
+function flaky() {
+  calls++;
+  if (calls <= failures) return Promise.reject(new Error('fail #' + calls));
+  return Promise.resolve('data');
 }
+
+// Call task(); if it rejects, try again, at most maxAttempts calls in total.
+function retry(task, maxAttempts) {
+  // TODO
+  return task().catch((err) => (calls < maxAttempts ? retry(task, maxAttempts) : Promise.reject(err)));
+}
+
+console.log('start');
+retry(flaky, attempts)
+  .then((value) => console.log('ok: ' + value + ' after ' + calls + ' calls'))
+  .catch((err) => console.log('gave up: ' + err.message + ' after ' + calls + ' calls'));
+console.log('queued');
