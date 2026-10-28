@@ -18,6 +18,8 @@ function chain(obj) {
 function owner(obj, key) {
   let holder = obj;
   let hops = 0;
+  if (Object.getPrototypeOf(obj) === null)
+    return obj[key] !== undefined ? { holder, hops } : null;
   while (holder !== null && !holder.hasOwnProperty(key)) {
     holder = Object.getPrototypeOf(holder);
     hops++;
@@ -72,8 +74,8 @@ Dog < Animal: barks eats
 Puppy < Dog: plays
 Bare < null: x
 Mixin: helper
-is Puppy Animal
-is Animal Puppy
-is Puppy Puppy
-is Dog Mixin
+chain Bare
+? Bare x
+? Bare toString
+? Puppy toString
 */
