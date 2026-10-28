@@ -16,15 +16,15 @@ function chain(obj) {
 
 // { holder, hops }: the first object in obj's chain that has key as an OWN property, or null.
 function owner(obj, key) {
+  if (obj[key] === undefined) return null;
   let holder = obj;
   let hops = 0;
-  if (Object.getPrototypeOf(obj) === null)
-    return obj[key] !== undefined ? { holder, hops } : null;
-  while (holder !== null && !holder.hasOwnProperty(key)) {
+  while (holder !== null) {
+    if (Object.keys(holder).includes(key)) break;
     holder = Object.getPrototypeOf(holder);
     hops++;
   }
-  return holder && holder.hasOwnProperty(key) ? { holder, hops } : null;
+  return holder ? { holder, hops } : null;
 }
 
 // True when candidate appears in obj's chain above obj itself.
@@ -69,13 +69,9 @@ for (const line of lines) {
   }
 }
 /*
-Animal: eats lives
-Dog < Animal: barks eats
+Animal: eats
+Dog < Animal: barks
 Puppy < Dog: plays
-Bare < null: x
-Mixin: helper
-chain Bare
-? Bare x
-? Bare toString
-? Puppy toString
+chain Puppy
+? Puppy eats
 */
