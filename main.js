@@ -20,7 +20,11 @@ function owner(obj, key) {
   let holder = obj;
   let hops = 0;
   while (holder !== null) {
-    if (Object.keys(holder).includes(key)) break;
+    if (
+      Object.keys(holder).includes(key) ||
+      (holder.hasOwnProperty && holder.hasOwnProperty(key))
+    )
+      break;
     holder = Object.getPrototypeOf(holder);
     hops++;
   }
@@ -69,9 +73,13 @@ for (const line of lines) {
   }
 }
 /*
-Animal: eats
-Dog < Animal: barks
+Animal: eats lives
+Dog < Animal: barks eats
 Puppy < Dog: plays
-chain Puppy
-? Puppy eats
+Bare < null: x
+Mixin: helper
+chain Bare
+? Bare x
+? Bare toString
+? Puppy toString
 */
