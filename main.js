@@ -1,40 +1,79 @@
-const lines = require("fs").readFileSync(0, "utf-8").split("\n");
-const name = lines[0];
-const greeting = lines[1];
-const punct = lines[2];
-const k = Number(lines[3]);
+const lines = require("fs")
+  .readFileSync(0, "utf-8")
+  .split("\n")
+  .filter((l) => l.trim() !== "");
 
-// Return a function that calls fn with this = thisArg and arguments preset..., then its own.
-function myBind(fn, thisArg, ...preset) {
-  // TODO
-  thisArg.fn = fn;
-  return (...args) => thisArg.fn(...preset, ...args);
+// All objects from obj up to the end of its prototype chain (stop when there is no prototype).
+function chain(obj) {
+  const chain = [obj];
+  let prototype = Object.getPrototypeOf(obj);
+  while (prototype) {
+    chain.push(prototype);
+    prototype = Object.getPrototypeOf(prototype);
+  }
+  return chain;
 }
 
-function describe(greeting, punct, extra) {
-  return (
-    greeting +
-    ", " +
-    this.name +
-    punct +
-    (extra === undefined ? "" : " " + extra)
-  );
+// { holder, hops }: the first object in obj's chain that has key as an OWN property, or null.
+function owner(obj, key) {
+  let holder = obj;
+  let hops = 0;
+  while (holder !== null && !holder.hasOwnProperty(key)) {
+    holder = Object.getPrototypeOf(holder);
+    hops++;
+  }
+  return holder && holder.hasOwnProperty(key) ? { holder, hops } : null;
 }
 
-const owner = { name: name };
-const hello = myBind(describe, owner, greeting);
-console.log(hello(punct));
-console.log(hello(punct, "again"));
-console.log(hello.call({ name: "Other" }, "?"));
-console.log(describe.call({ name: "Other" }, greeting, "."));
+// True when candidate appears in obj's chain above obj itself.
+function isAncestor(obj, candidate) {
+  while (obj !== null) {
+    obj = Object.getPrototypeOf(obj);
+    if (obj === candidate) return true;
+  }
+  return false;
+}
 
-const counter = {
-  n: 0,
-  inc() {
-    this.n += 1;
-    return this.n;
-  },
-};
-const inc = myBind(counter.inc, counter);
-for (let i = 0; i < k; i++) inc();
-console.log("counter.n: " + counter.n);
+const byName = Object.create(null); // object name -> object
+const known = [Object.prototype]; // every object we have named...
+const labels = ["Object.prototype"]; // ...and its name, at the same index
+const nameOf = (o) => labels[known.indexOf(o)];
+for (const line of lines) {
+  if (line.includes(":")) {
+    const [head, rest] = line.split(":");
+    const [name, parentName] = head.split("<").map((s) => s.trim());
+    let obj;
+    if (parentName === undefined) obj = {};
+    else if (parentName === "null") obj = Object.create(null);
+    else obj = Object.create(byName[parentName]);
+    for (const key of rest.split(" ").filter((k) => k !== "")) obj[key] = true;
+    byName[name] = obj;
+    known.push(obj);
+    labels.push(name);
+  } else {
+    const parts = line.trim().split(" ");
+    if (parts[0] === "chain") {
+      console.log(chain(byName[parts[1]]).map(nameOf).join(" > "));
+    } else if (parts[0] === "?") {
+      const found = owner(byName[parts[1]], parts[2]);
+      console.log(
+        parts[2] +
+          " -> " +
+          (found ? nameOf(found.holder) + " (" + found.hops + ")" : "none"),
+      );
+    } else if (parts[0] === "is") {
+      console.log(isAncestor(byName[parts[1]], byName[parts[2]]));
+    }
+  }
+}
+/*
+Animal: eats lives
+Dog < Animal: barks eats
+Puppy < Dog: plays
+Bare < null: x
+Mixin: helper
+is Puppy Animal
+is Animal Puppy
+is Puppy Puppy
+is Dog Mixin
+*/
