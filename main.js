@@ -23,7 +23,8 @@ class LRUCache {
   put(key, value) {
     // TODO
     if (this.map.size >= this.capacity) {
-      this.map = new Map([...this.map.entries()].slice(1));
+      if (this.map.has(key)) this.map.delete(key);
+      else this.map = new Map([...this.map.entries()].slice(1));
     }
     this.map.set(key, value);
   }
