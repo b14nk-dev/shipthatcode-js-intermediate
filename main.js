@@ -1,4 +1,8 @@
-const parts = require('fs').readFileSync(0, 'utf-8').trim().split(' ').map(Number);
+const parts = require("fs")
+  .readFileSync(0, "utf-8")
+  .trim()
+  .split(" ")
+  .map(Number);
 const n = parts[0];
 const size = parts[1];
 
@@ -51,9 +55,10 @@ function* chunk(iterable, size) {
     }
     val = iterable.next();
   }
+  if (arr.length > 0) yield arr;
 }
 
 for (const group of chunk(take(filterGen(naturals, isPrime), n), size)) {
-  console.log(group.join(' '));
+  console.log(group.join(" "));
 }
-console.log('pulled: ' + pulled);
+console.log("pulled: " + pulled);
