@@ -51,8 +51,6 @@ function* chunk(iterable, size) {
     }
     val = iterable.next();
   }
-
-  yield arr;
 }
 
 for (const group of chunk(take(filterGen(naturals, isPrime), n), size)) {
