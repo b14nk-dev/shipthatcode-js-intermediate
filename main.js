@@ -1,7 +1,7 @@
 const text = require('fs').readFileSync(0, 'utf-8');
 
 // One pattern with named groups `user` and `domain`, and the g flag.
-const EMAIL = /(?<user>[\w\d\-\_\.\+]+)@(?<domain>[\w\d\-]+(\.[\w\d\-]+)+)/g;
+const EMAIL = /(?<user>[\w\d\-\_\.\+]+)@(?<domain>[a-zA-Z0-9\-]+(\.[a-zA-Z0-9\-]+)+)/g;
 
 // Return [{ user, domain }, ...] for every address in text, in order.
 function findEmails(text) {
