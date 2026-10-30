@@ -1,64 +1,20 @@
-const parts = require("fs")
-  .readFileSync(0, "utf-8")
-  .trim()
-  .split(" ")
-  .map(Number);
-const n = parts[0];
-const size = parts[1];
+const text = require('fs').readFileSync(0, 'utf-8');
 
-// An infinite iterable of 2, 3, 4, ... that counts every value it hands out.
-let pulled = 0;
-const naturals = {
-  [Symbol.iterator]() {
-    let k = 2;
-    return {
-      next() {
-        pulled++;
-        return { value: k++, done: false };
-      },
-    };
-  },
-};
+// One pattern with named groups `user` and `domain`, and the g flag.
+const EMAIL = /(?<user>[\w\d\-\_\.\+]+)@(?<domain>[\w\d\-]+\.[\w\d\-]+)/g;
 
-function isPrime(k) {
-  for (let d = 2; d * d <= k; d++) {
-    if (k % d === 0) return false;
+// Return [{ user, domain }, ...] for every address in text, in order.
+function findEmails(text) {
+  let parsed = [];
+  for (let m of text.matchAll(EMAIL)) {
+    const { user, domain } = m.groups;
+    parsed.push({ user, domain });
   }
-  return k >= 2;
+  return parsed;
 }
 
-// Yield the first `count` items of iterable, pulling no more than that from it.
-function* take(iterable, count) {
-  let counter = 0;
-  while (counter < count) {
-    counter++;
-    yield iterable.next().value;
-  }
+const found = findEmails(text);
+for (const entry of found) {
+  console.log(entry.user + ' at ' + entry.domain);
 }
-
-// Yield only the items for which pred(item) is true.
-function* filterGen(iterable, pred) {
-  for (let n of iterable) {
-    if (pred(n)) yield n;
-  }
-}
-
-// Yield arrays of `size` items; the last one may be shorter.
-function* chunk(iterable, size) {
-  let arr = [];
-  let val = iterable.next();
-  while (!val.done) {
-    arr.push(val.value);
-    if (arr.length >= size) {
-      yield arr;
-      arr = [];
-    }
-    val = iterable.next();
-  }
-  if (arr.length > 0) yield arr;
-}
-
-for (const group of chunk(take(filterGen(naturals, isPrime), n), size)) {
-  console.log(group.join(" "));
-}
-console.log("pulled: " + pulled);
+console.log('total: ' + found.length);
